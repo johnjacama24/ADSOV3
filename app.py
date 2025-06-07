@@ -1,15 +1,6 @@
 import streamlit as st
 import pandas as pd
 import pickle
-import re
-import unicodedata
-
-def normalizar_nombre(nombre):
-    # Eliminar acentos y caracteres especiales
-    nombre = unicodedata.normalize('NFKD', nombre).encode('ascii', 'ignore').decode('utf-8')
-    nombre = re.sub(r'[^\w\s]', '', nombre)  # Elimina puntuación
-    nombre = nombre.strip().lower().replace(" ", "_")  # Opcional: reemplazar espacios
-    return nombre
 
 @st.cache_resource
 def cargar_modelo_datos():
@@ -22,11 +13,6 @@ def cargar_modelo_datos():
 
 modelo, diccionario_inverso, df_codificado = cargar_modelo_datos()
 
-# Crear mapa de nombres normalizados
-col_originales = df_codificado.drop(columns=["Estado Aprendiz"], errors="ignore").columns
-col_normalizadas = [normalizar_nombre(col) for col in col_originales]
-mapa_col = dict(zip(col_normalizadas, col_originales))
-
 st.title("🔍 Predicción del Estado del Aprendiz")
 
 edad = st.slider("Edad", 18, 100, 25)
@@ -35,30 +21,26 @@ estrato = st.selectbox("Estrato socioeconómico", [1, 2, 3, 4, 5, 6])
 
 if st.button("Realizar predicción"):
     try:
-        muestra = df_codificado.drop(columns=["Estado Aprendiz"], errors="ignore").iloc[[0]].copy()
+        # ✅ Usar una fila real del dataframe codificado original
+        fila_original = df_codificado.drop(columns=["Estado Aprendiz"]).iloc[0].copy()
 
-        # Reemplazar columnas numéricas modificadas
+        # ✅ Convertir a DataFrame
+        muestra = pd.DataFrame([fila_original])
+
+        # ✅ Modificar solo variables que se deben personalizar
         for col in muestra.columns:
-            nombre_normalizado = normalizar_nombre(col)
-            if "edad" in nombre_normalizado:
+            if "Edad" in col:
                 muestra[col] = edad
-            elif "cantidad_de_quejas" in nombre_normalizado:
+            elif "Cantidad de quejas" in col:
                 muestra[col] = cantidad_quejas
-            elif "estrato" in nombre_normalizado:
+            elif "Estrato" in col:
                 muestra[col] = estrato
 
+        # ✅ Predecir
         pred = modelo.predict(muestra)[0]
         resultado = diccionario_inverso.get(pred, f"Desconocido ({pred})")
 
-        st.subheader("📈 Resultado de la predicción:")
-        st.success(f"Estado del aprendiz predicho: **{resultado}**")
-
-        st.subheader("📌 Datos ingresados:")
-        st.write({
-            "Edad": edad,
-            "Cantidad de quejas": cantidad_quejas,
-            "Estrato socioeconómico": estrato
-        })
+        st.success(f"📈 Estado del aprendiz predicho: **{resultado}**")
 
     except Exception as e:
         st.error("❌ Error al hacer la predicción:")
