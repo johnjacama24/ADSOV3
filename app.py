@@ -11,7 +11,7 @@ def cargar_modelo_datos():
         df = data["dataframe_codificado"]
         return modelo, diccionario_inverso, df
 
-modelo, diccionario_inverso, df_codificado = cargar_modelo_datos()
+modelo, diccionario_inverso, df = cargar_modelo_datos()
 
 st.title("🔍 Predicción del Estado del Aprendiz")
 
@@ -22,7 +22,7 @@ estrato = st.selectbox("Estrato socioeconómico", [1, 2, 3, 4, 5, 6])
 if st.button("Realizar predicción"):
     try:
         # ✅ Usar una fila real del dataframe codificado original
-        fila_original = df_codificado.drop(columns=["Estado Aprendiz"]).iloc[0].copy()
+        fila_original = df.drop(columns=["Estado Aprendiz"]).iloc[0].copy()
 
         # ✅ Convertir a DataFrame
         muestra = pd.DataFrame([fila_original])
